@@ -45,22 +45,55 @@ var saveTasks = function() {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 };
 
+// audit task
+var auditTask = function(taskEl) {
+  // get date from task element
+  var date = $(taskEl).find("span").text().trim();
+  // ensure it worked
+  console.log(date); 
+
+  // convert to moment object at 5:00pm
+  var time = moment(date, "L").set("hour", 17);
+
+  // remove any old classes from element
+  $(taskEl).removeClass("list-group-item-warning list-group-item-danger");
+
+  // apply new class if task is near/over due date
+  if (moment().isAfter(time)) {
+    $(taskEl).addClass("list-group-item-danger");
+  } 
+  else if (Math.abs(moment().diff(time, "days")) <= 2) {
+    $(taskEl).addClass("list-group-item-warning");
+  }
+  console.log(taskEl);
+};
+
+
 $(".card .list-group").sortable({
   connectWith: $(".card .list-group"),
   scroll: false,
   tolerance: "pointer",
   helper: "clone",
+
   activate: function(event, ui) {
-    console.log(ui);
+    $(this).addClass("dropover"),
+    $(".bottom-trash").addClass("bottom-trash-drag"),
+    console.log("activate", this);
   },
   deactivate: function(event, ui) {
-    console.log(ui);
+    $(this).removeClass("dropover"),
+    $(".bottom-trash").removeClass("bottom-trash-drag"),
+    console.log("deactivate", this);
   },
   over: function(event) {
-    console.log(event);
+    $("event.target").addClass("dropover-active"),
+    $(".bottom-trash").addClass("bottom-trash-active"),
+    console.log("over", event.target);
   },
   out: function(event) {
-    console.log(event);
+    $("event.target").removeClass("dropover-active"),
+    $(".bottom-trash").removeClass("bottom-trash-active"),
+    console.log("out", event.target);
   },
 
   update: function() { 
@@ -70,6 +103,7 @@ $(".card .list-group").sortable({
 
       // loop over current set of children in sortable list
     $(this).children().each(function() {
+
       // add task data to the temp array as an object
       tempArr.push({
     
@@ -92,32 +126,6 @@ $(".card .list-group").sortable({
   }
 });
 
-
-
-// audit task
-var auditTask = function(taskEl) {
-  // get date from task element
-  var date = $(taskEl).find("span").text().trim();
-  // ensure it worked
-  console.log(date); 
-
-  // convert to moment object at 5:00pm
-  var time = moment(date, "L").set("hour", 17);
-
-  // remove any old classes from element
-  $(taskEl).removeClass("list-group-item-warning list-group-item-danger");
-
-  // apply new class if task is near/over due date
-  if (moment().isAfter(time)) {
-    $(taskEl).addClass("list-group-item-danger");
-  } 
-  else if (Math.abs(moment().diff(time, "days")) <= 2) {
-    $(taskEl).addClass("list-group-item-warning");
-  }
-};
-
-
-
 $("#trash").droppable({
   accept: ".card .list-group-item",
   tolerance: "touch",
@@ -133,7 +141,6 @@ $("#trash").droppable({
   }
 });
   
-
 // modal was triggered
 $("#task-form-modal").on("show.bs.modal", function() {
   // clear values
@@ -152,9 +159,8 @@ $("#modalDueDate").datepicker({
 });
 
 
-
 // save button in modal was clicked
-$("#task-form-modal .btn-primary").click(function() {
+$("#task-form-modal .btn-save").click(function() {
   // get form values
   var taskText = $("#modalTaskDescription").val();
   var taskDate = $("#modalDueDate").val();
@@ -175,15 +181,6 @@ $("#task-form-modal .btn-primary").click(function() {
   };
 });
  
-// trim down list's ID to match object property
-// var arrName = $(this)
-  // .attr("id")
-  // .replace("list-", "");
-// 
-
-// update array on tasks object and save
-//tasks[arrName] = tempArr;
-///saveTasks();
 
 // task text was clicked
 $(".list-group").on("click", "p", function() {
@@ -224,8 +221,6 @@ $(".list-group").on("blur", "textarea", function() {
   // replace textarea with new content
   $(this).replaceWith(taskP);
 });
-
-
 
 
 // due date was clicked
@@ -285,3 +280,9 @@ $("#remove-tasks").on("click", function() {
 
 // load tasks for the first time
 loadTasks();
+
+setInterval(function() {
+  $(".card .list-group-item").each(function(index, el) {
+    auditTask(el);
+  });
+}, (1000*60) * 30);
